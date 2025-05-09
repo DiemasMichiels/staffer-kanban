@@ -1,4 +1,4 @@
-import React from "react";
+import { useEffect } from "react";
 import { useForm, type SubmitHandler } from "react-hook-form";
 import {
   useKanbanStore,
@@ -6,40 +6,44 @@ import {
   type Candidate,
 } from "../../store/useKanbanStore";
 
-type EditModalProps = {
-  isOpen: boolean;
-  candidate: Candidate | null;
-  onClose: () => void;
-  isNew?: boolean;
+const DEFAULT_FORM: Pick<
+  Candidate,
+  "name" | "role" | "applicationDate" | "status" | "priority"
+> = {
+  name: "",
+  role: "",
+  applicationDate: "",
+  status: "Applied",
+  priority: false,
 };
 
-const EditModal: React.FC<EditModalProps> = ({
-  isOpen,
-  candidate,
-  onClose,
-  isNew = false,
-}) => {
-  const { updateCandidate, addCandidate, createNewCandidate } =
-    useKanbanStore();
+type EditModalProps = {
+  isOpen: boolean;
+  candidate: Candidate | undefined;
+  onClose: () => void;
+};
+
+const EditModal = ({ isOpen, candidate, onClose }: EditModalProps) => {
+  const { updateCandidate, addCandidate } = useKanbanStore();
 
   const {
     register,
     handleSubmit,
     formState: { errors },
+    reset,
   } = useForm<Candidate>({
-    defaultValues: candidate || undefined,
+    defaultValues: candidate ?? DEFAULT_FORM,
   });
+
+  useEffect(() => {
+    reset(candidate ?? DEFAULT_FORM);
+  }, [candidate, reset]);
 
   if (!isOpen) return null;
 
-  if (!candidate) {
-    candidate = createNewCandidate();
-  }
-
   const onSubmit: SubmitHandler<Candidate> = (data) => {
-    if (isNew) {
+    if (!candidate) {
       addCandidate({
-        ...candidate,
         ...data,
       });
     } else {
@@ -55,7 +59,7 @@ const EditModal: React.FC<EditModalProps> = ({
     <dialog open className="modal modal-open">
       <div className="modal-box">
         <h2 className="text-xl font-semibold mb-4">
-          {isNew ? "Add New Candidate" : "Edit Candidate"}
+          {candidate ? "Edit candidate" : "Add new candidate"}
         </h2>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="form-control">
@@ -148,7 +152,7 @@ const EditModal: React.FC<EditModalProps> = ({
 
           <div className="modal-action">
             <button className="btn btn-primary" type="submit">
-              {isNew ? "Add Candidate" : "Save Changes"}
+              {candidate ? "Save Changes" : "Add Candidate"}
             </button>
             <button className="btn btn-ghost" type="button" onClick={onClose}>
               Cancel

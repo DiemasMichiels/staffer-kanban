@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { v4 as uuidv4 } from "uuid";
 
 export const PROCESSING_STATES = {
   Applied: "Applied",
@@ -42,16 +43,11 @@ interface KanbanState {
   updateCandidate: (updatedCandidate: Candidate) => void;
   addCandidate: (candidate: Candidate) => void;
   removeCandidate: (id: string) => void;
-  createNewCandidate: () => Candidate;
-  getCandidatesByColumn: (
-    columns: ProcessingStates[]
-  ) => Record<ProcessingStates, Candidate[]>;
 }
 
-// Create Zustand store with persistence
 export const useKanbanStore = create<KanbanState>()(
   persist(
-    (set, get) => ({
+    (set) => ({
       candidates: initialCandidates,
       updateCandidate: (updatedCandidate) =>
         set((state) => ({
@@ -62,7 +58,7 @@ export const useKanbanStore = create<KanbanState>()(
 
       addCandidate: (candidate) =>
         set((state) => ({
-          candidates: [...state.candidates, candidate],
+          candidates: [...state.candidates, { ...candidate, id: uuidv4() }],
         })),
 
       removeCandidate: (id) =>
@@ -71,25 +67,6 @@ export const useKanbanStore = create<KanbanState>()(
             (candidate) => candidate.id !== id
           ),
         })),
-
-      createNewCandidate: () => ({
-        id: `candidate-${Date.now()}`,
-        name: "New Candidate",
-        role: "Open Position",
-        applicationDate: new Date().toISOString().split("T")[0],
-        status: "Applied",
-        priority: false,
-      }),
-
-      getCandidatesByColumn: (columns) => {
-        const { candidates } = get();
-        return columns.reduce((acc, column) => {
-          acc[column] = candidates.filter(
-            (candidate) => candidate.status === column
-          );
-          return acc;
-        }, {} as Record<ProcessingStates, Candidate[]>);
-      },
     }),
     {
       name: "staffer-kanban-storage",
