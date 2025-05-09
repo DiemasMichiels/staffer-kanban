@@ -1,35 +1,47 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useState } from "react";
+import Kanban from "./components/Kanban/Kanban";
+import EditModal from "./components/Candidate/EditModal";
 
-function App() {
-  const [count, setCount] = useState(0)
+const App = () => {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingCandidate, setEditingCandidate] = useState(null);
+  const [isNew, setIsNew] = useState(false);
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
-}
+    <div className="p-6 min-h-screen bg-base-200">
+      <div className="h-full flex flex-col">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-2xl font-bold text-base-content">
+            Staffer ATS Kanban Board
+          </h1>
+          <button
+            className="btn btn-primary"
+            onClick={() => {
+              setEditingCandidate(null);
+              setIsNew(true);
+              setIsModalOpen(true);
+            }}
+          >
+            Add Candidate
+          </button>
+        </div>
 
-export default App
+        <div className="flex flex-1 gap-4 overflow-hidden">
+          <Kanban />
+        </div>
+        <EditModal
+          isOpen={isModalOpen}
+          candidate={editingCandidate}
+          onClose={() => {
+            setIsModalOpen(false);
+            setEditingCandidate(null);
+            setIsNew(false);
+          }}
+          isNew={isNew}
+        />
+      </div>
+    </div>
+  );
+};
+
+export default App;
