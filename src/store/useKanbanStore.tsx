@@ -1,6 +1,7 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { persist, createJSONStorage } from "zustand/middleware";
 import { v4 as uuidv4 } from "uuid";
+import { useEffect } from "react";
 
 export const PROCESSING_STATES = {
   Applied: "Applied",
@@ -38,10 +39,12 @@ const initialCandidates: Candidate[] = [
   },
 ];
 
+const STORAGE_KEY = "staffer-kanban-storage";
+
 interface KanbanState {
   candidates: Candidate[];
   updateCandidate: (updatedCandidate: Candidate) => void;
-  addCandidate: (candidate: Candidate) => void;
+  addCandidate: (candidate: Omit<Candidate, "id">) => void;
   removeCandidate: (id: string) => void;
 }
 
@@ -49,6 +52,7 @@ export const useKanbanStore = create<KanbanState>()(
   persist(
     (set) => ({
       candidates: initialCandidates,
+
       updateCandidate: (updatedCandidate) =>
         set((state) => ({
           candidates: state.candidates.map((candidate) =>
@@ -58,7 +62,10 @@ export const useKanbanStore = create<KanbanState>()(
 
       addCandidate: (candidate) =>
         set((state) => ({
-          candidates: [...state.candidates, { ...candidate, id: uuidv4() }],
+          candidates: [
+            ...state.candidates,
+            { ...candidate, id: uuidv4() } as Candidate,
+          ],
         })),
 
       removeCandidate: (id) =>
@@ -69,8 +76,34 @@ export const useKanbanStore = create<KanbanState>()(
         })),
     }),
     {
-      name: "staffer-kanban-storage",
+      name: STORAGE_KEY,
+      storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({ candidates: state.candidates }),
     }
   )
 );
+
+export const useSyncKanbanStore = () => {
+  useEffect(() => {
+    const handleStorageChange = (event: StorageEvent) => {
+      if (event.key === STORAGE_KEY && event.newValue) {
+        try {
+          const parsedValue = JSON.parse(event.newValue);
+          if (parsedValue?.state?.candidates) {
+            useKanbanStore.setState({
+              candidates: parsedValue.state.candidates,
+            });
+          }
+        } catch (error) {
+          console.error("Error syncing data from other tab:", error);
+        }
+      }
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+    };
+  }, []);
+};

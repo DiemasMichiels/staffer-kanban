@@ -1,11 +1,13 @@
 import { useState } from "react";
 import Kanban from "./components/Kanban/Kanban";
 import EditModal from "./components/Candidate/EditModal";
-import type { Candidate } from "./store/useKanbanStore";
+import { useSyncKanbanStore, type Candidate } from "./store/useKanbanStore";
 
 const App = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCandidate, setEditingCandidate] = useState<Candidate>();
+
+  useSyncKanbanStore();
 
   return (
     <div className="p-6 h-screen bg-base-200">
